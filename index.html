@@ -28,6 +28,7 @@
     <label>Longitude: <input type="text" id="lon" placeholder="-77.0365"></label>
     <label>Offset X: <input type="text" id="offsetX" placeholder="0"></label>
     <label>Offset Y: <input type="text" id="offsetY" placeholder="0"></label>
+    <label>Course Name: <input type="text" id="courseName" placeholder="Enter Course Name"></label>
     <button onclick="addOrUpdateMarker()">Add/Update Marker</button>
     <button onclick="downloadData()">Download Data</button>
     <input type="file" id="file-input" onchange="loadData()">
@@ -39,6 +40,7 @@
                 <th>Longitude</th>
                 <th>Offset X</th>
                 <th>Offset Y</th>
+                <th>Course Name</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -59,7 +61,7 @@
             const storedData = localStorage.getItem('mapData');
             if (storedData) {
                 JSON.parse(storedData).forEach(data => {
-                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, true);
+                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, data.courseName, true);
                 });
             }
         });
@@ -69,17 +71,18 @@
             const lon = parseFloat(document.getElementById('lon').value);
             const offsetX = parseFloat(document.getElementById('offsetX').value);
             const offsetY = parseFloat(document.getElementById('offsetY').value);
+            const courseName = document.getElementById('courseName').value;
 
             const key = `${lat}_${lon}`;
             if (markers[key]) {
-                updateMarker(lat, lon, offsetX, offsetY);
+                updateMarker(lat, lon, offsetX, offsetY, courseName);
             } else {
-                addMarkerToMap(lat, lon, offsetX, offsetY, false);
+                addMarkerToMap(lat, lon, offsetX, offsetY, courseName, false);
             }
             storeData();
         }
 
-        function addMarkerToMap(lat, lon, offsetX, offsetY, isInitializing) {
+        function addMarkerToMap(lat, lon, offsetX, offsetY, courseName, isInitializing) {
             var marker = L.marker([lat, lon]).addTo(map);
             if (!isInitializing) map.panTo(new L.LatLng(lat, lon));
 
@@ -90,15 +93,17 @@
             const row = document.createElement('tr');
             row.setAttribute('data-key', key);
             row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${offsetX}</td><td>${offsetY}</td>
+                             <td>${courseName}</td>
                              <td><button onclick="removeRow(this)">Remove</button></td>`;
             document.getElementById('data-table').appendChild(row);
         }
 
-        function updateMarker(lat, lon, offsetX, offsetY) {
+        function updateMarker(lat, lon, offsetX, offsetY, courseName) {
             const key = `${lat}_${lon}`;
             const row = document.querySelector(`tr[data-key="${key}"]`);
             row.cells[2].textContent = offsetX;
             row.cells[3].textContent = offsetY;
+            row.cells[4].textContent = courseName;
             map.panTo(new L.LatLng(lat, lon));
         }
 
@@ -110,7 +115,8 @@
                     lat: parseFloat(cells[0].textContent),
                     lon: parseFloat(cells[1].textContent),
                     offsetX: parseFloat(cells[2].textContent),
-                    offsetY: parseFloat(cells[3].textContent)
+                    offsetY: parseFloat(cells[3].textContent),
+                    courseName: cells[4].textContent
                 };
             });
             localStorage.setItem('mapData', JSON.stringify(data));
@@ -134,7 +140,7 @@
             reader.onload = function(e) {
                 const data = JSON.parse(e.target.result);
                 data.forEach(data => {
-                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, true);
+                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, data.courseName, true);
                 });
                 localStorage.setItem('mapData', JSON.stringify(data));
             };
