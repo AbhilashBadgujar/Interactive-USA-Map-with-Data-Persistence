@@ -32,7 +32,7 @@
     <button onclick="addOrUpdateMarker()">Add/Update Marker</button>
     <button onclick="downloadData()">Download Data</button>
     <input type="file" id="file-input" onchange="loadData()">
-    <select id="courseSelect" onchange="panToCourse()">
+    <select id="courseSelect" onchange="selectCourse()">
         <option value="">Select a Course</option>
     </select>
     <div id="map"></div>
@@ -53,8 +53,8 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([38.8977, -77.0365], 5);
-        var markers = {};
+        var map = L.map('map').setView([38.8977, -77.0365], 5); // Center map over USA
+        var markers = {}; // Object to hold markers for easy reference
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -120,9 +120,17 @@
             }
         }
 
-        function panToCourse() {
+        function selectCourse() {
             const key = document.getElementById('courseSelect').value;
             if (key && markers[key]) {
+                const markerData = markers[key].getPopup().getContent().match(/<b>(.*?)<\/b><br>Offset X: (.*?)<br>Offset Y: (.*?)/);
+                if (markerData) {
+                    document.getElementById('courseName').value = markerData[1];
+                    document.getElementById('lat').value = markers[key].getLatLng().lat;
+                    document.getElementById('lon').value = markers[key].getLatLng().lng;
+                    document.getElementById('offsetX').value = markerData[2];
+                    document.getElementById('offsetY').value = markerData[3];
+                }
                 map.panTo(markers[key].getLatLng());
                 markers[key].openPopup();
             }
