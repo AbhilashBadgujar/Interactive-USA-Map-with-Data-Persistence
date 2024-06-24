@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
-            height: 1000px;
+            height: 500px;
         }
         body {
             font-family: Arial, sans-serif;
@@ -39,6 +39,7 @@
                 <th>Longitude</th>
                 <th>Offset X</th>
                 <th>Offset Y</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="data-table">
@@ -78,7 +79,8 @@
 
             // Append data to the table
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${offsetX}</td><td>${offsetY}</td>`;
+            row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${offsetX}</td><td>${offsetY}</td>
+                             <td><button onclick="removeRow(this)">Remove</button></td>`;
             document.getElementById('data-table').appendChild(row);
         }
 
@@ -119,6 +121,14 @@
                 localStorage.setItem('mapData', JSON.stringify(data));
             };
             reader.readAsText(file);
+        }
+
+        function removeRow(button) {
+            // Remove row from HTML table
+            var row = button.parentNode.parentNode;
+            document.getElementById('data-table').removeChild(row);
+            // Update local storage
+            storeData();
         }
     </script>
 </body>
