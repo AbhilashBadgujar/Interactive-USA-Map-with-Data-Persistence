@@ -124,7 +124,7 @@
 
         function downloadData() {
             const data = localStorage.getItem('mapData');
-            const blob = new Blob([data], { type: 'application/json' });
+            the blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
