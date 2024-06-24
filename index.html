@@ -124,7 +124,7 @@
 
         function downloadData() {
             const data = localStorage.getItem('mapData');
-            the blob = new Blob([data], { type: 'application/json' });
+            const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -140,6 +140,7 @@
             reader.onload = function(e) {
                 const data = JSON.parse(e.target.result);
                 data.forEach(data => {
+                    console.log(data.courseName);
                     addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, data.courseName, true);
                 });
                 localStorage.setItem('mapData', JSON.stringify(data));
