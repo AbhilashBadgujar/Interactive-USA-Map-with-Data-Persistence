@@ -87,7 +87,7 @@
             if (!isInitializing) map.panTo(new L.LatLng(lat, lon));
 
             const key = `${lat}_${lon}`;
-            markers[key] = marker; // Store marker reference
+            markers[key] = marker;
 
             const select = document.getElementById('courseSelect');
             const option = document.createElement('option');
