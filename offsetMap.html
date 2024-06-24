@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive USA Map with Data Persistence</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 1000px;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Map_of_USA_with_state_names.svg/1280px-Map_of_USA_with_state_names.svg.png');
+            background-size: cover;
+            position: relative;
+        }
+        .pin {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: red;
+            position: absolute;
+            transform: translate(-50%, -100%);
+            cursor: pointer;
+        }
+        #info, #file-input-label {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <label>Latitude: <input type="text" id="lat" value="38.8977"></label>
+    <label>Longitude: <input type="text" id="lon" value="-77.0365"></label>
+    <label>Offset X: <input type="text" id="offsetX" value="0"></label>
+    <label>Offset Y: <input type="text" id="offsetY" value="0"></label>
+    <button onclick="addPinByLatLon()">Place Pin</button>
+    <button onclick="downloadData()">Download Data</button>
+    <label id="file-input-label">Upload Data: <input type="file" id="file-input" onchange="loadData()"></label>
+    <div id="map"></div>
+    <div id="info"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>X</th>
+                <th>Y</th>
+                <th>Offset X</th>
+                <th>Offset Y</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+        </tbody>
+    </table>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const storedData = localStorage.getItem('mapData');
+            if (storedData) {
+                JSON.parse(storedData).forEach(rowData => appendRow(rowData));
+            }
+        });
+
+        function addPinByLatLon() {
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lon = parseFloat(document.getElementById('lon').value);
+            const offsetX = parseFloat(document.getElementById('offsetX').value);
+            const offsetY = parseFloat(document.getElementById('offsetY').value);
+
+            const rowData = { lat, lon, offsetX, offsetY };
+            appendRow(rowData);
+
+            // Store data in local storage
+            storeData();
+        }
+
+        function appendRow({ lat, lon, offsetX, offsetY }) {
+            const minX = -124.848974;
+            const maxX = -66.932617;
+            const minY = 24.396308;
+            const maxY = 49.384358;
+            const mapWidth = document.getElementById('map').offsetWidth;
+            const mapHeight = document.getElementById('map').offsetHeight;
+
+            const x = ((lon - minX) / (maxX - minX)) * mapWidth;
+            const y = ((maxY - lat) / (maxY - minY)) * mapHeight;
+
+            const pin = document.createElement('div');
+            pin.className = 'pin';
+            pin.style.left = x + 'px';
+            pin.style.top = y + 'px';
+            document.getElementById('map').appendChild(pin);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${x.toFixed(2)}</td><td>${y.toFixed(2)}</td><td>${offsetX}</td><td>${offsetY}</td>`;
+            document.getElementById('data-table').appendChild(row);
+        }
+
+        function storeData() {
+            const rows = document.querySelectorAll('#data-table tr');
+            const data = Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    lat: parseFloat(cells[0].textContent),
+                    lon: parseFloat(cells[1].textContent),
+                    offsetX: parseFloat(cells[4].textContent),
+                    offsetY: parseFloat(cells[5].textContent)
+                };
+            });
+            localStorage.setItem('mapData', JSON.stringify(data));
+        }
+
+        function downloadData() {
+            const data = localStorage.getItem('mapData');
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'map-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadData() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                data.forEach(rowData => appendRow(rowData));
+                localStorage.setItem('mapData', JSON.stringify(data));
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
