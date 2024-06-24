@@ -83,7 +83,9 @@
         }
 
         function addMarkerToMap(lat, lon, offsetX, offsetY, courseName, isInitializing) {
-            var marker = L.marker([lat, lon]).addTo(map);
+            var marker = L.marker([lat, lon]);
+            marker.bindPopup(`<b>${courseName}</b><br>Offset X: ${offsetX}<br>Offset Y: ${offsetY}`, {autoClose: false});
+            marker.addTo(map);
             if (!isInitializing) map.panTo(new L.LatLng(lat, lon));
 
             const key = `${lat}_${lon}`;
@@ -93,8 +95,8 @@
             const row = document.createElement('tr');
             row.setAttribute('data-key', key);
             row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${offsetX}</td><td>${offsetY}</td>
-                             <td>${courseName}</td>
-                             <td><button onclick="removeRow(this)">Remove</button></td>`;
+                            <td>${courseName}</td>
+                            <td><button onclick="removeRow(this)">Remove</button></td>`;
             document.getElementById('data-table').appendChild(row);
         }
 
@@ -104,6 +106,7 @@
             row.cells[2].textContent = offsetX;
             row.cells[3].textContent = offsetY;
             row.cells[4].textContent = courseName;
+            markers[key].setPopupContent(`<b>${courseName}</b><br>Offset X: ${offsetX}<br>Offset Y: ${offsetY}`);
             map.panTo(new L.LatLng(lat, lon));
         }
 
