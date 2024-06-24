@@ -28,7 +28,7 @@
     <label>Longitude: <input type="text" id="lon" placeholder="-77.0365"></label>
     <label>Offset X: <input type="text" id="offsetX" placeholder="0"></label>
     <label>Offset Y: <input type="text" id="offsetY" placeholder="0"></label>
-    <button onclick="addMarker()">Add Marker</button>
+    <button onclick="addOrUpdateMarker()">Add/Update Marker</button>
     <button onclick="downloadData()">Download Data</button>
     <input type="file" id="file-input" onchange="loadData()">
     <div id="map"></div>
@@ -49,6 +49,7 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([38.8977, -77.0365], 5); // Center map over USA
+        var markers = {}; // Object to hold markers for easy reference
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -58,30 +59,47 @@
             const storedData = localStorage.getItem('mapData');
             if (storedData) {
                 JSON.parse(storedData).forEach(data => {
-                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY);
+                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, true);
                 });
             }
         });
 
-        function addMarker() {
+        function addOrUpdateMarker() {
             const lat = parseFloat(document.getElementById('lat').value);
             const lon = parseFloat(document.getElementById('lon').value);
             const offsetX = parseFloat(document.getElementById('offsetX').value);
             const offsetY = parseFloat(document.getElementById('offsetY').value);
 
-            addMarkerToMap(lat, lon, offsetX, offsetY);
+            const key = `${lat}_${lon}`;
+            if (markers[key]) {
+                updateMarker(lat, lon, offsetX, offsetY);
+            } else {
+                addMarkerToMap(lat, lon, offsetX, offsetY, false);
+            }
             storeData();
         }
 
-        function addMarkerToMap(lat, lon, offsetX, offsetY) {
+        function addMarkerToMap(lat, lon, offsetX, offsetY, isInitializing) {
             var marker = L.marker([lat, lon]).addTo(map);
-            map.panTo(new L.LatLng(lat, lon));
+            if (!isInitializing) map.panTo(new L.LatLng(lat, lon));
+
+            const key = `${lat}_${lon}`;
+            markers[key] = marker; // Store marker reference
 
             // Append data to the table
             const row = document.createElement('tr');
+            row.setAttribute('data-key', key);
             row.innerHTML = `<td>${lat}</td><td>${lon}</td><td>${offsetX}</td><td>${offsetY}</td>
                              <td><button onclick="removeRow(this)">Remove</button></td>`;
             document.getElementById('data-table').appendChild(row);
+        }
+
+        function updateMarker(lat, lon, offsetX, offsetY) {
+            const key = `${lat}_${lon}`;
+            const row = document.querySelector(`tr[data-key="${key}"]`);
+            row.cells[2].textContent = offsetX;
+            row.cells[3].textContent = offsetY;
+            map.panTo(new L.LatLng(lat, lon));
         }
 
         function storeData() {
@@ -116,7 +134,7 @@
             reader.onload = function(e) {
                 const data = JSON.parse(e.target.result);
                 data.forEach(data => {
-                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY);
+                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, true);
                 });
                 localStorage.setItem('mapData', JSON.stringify(data));
             };
@@ -126,7 +144,9 @@
         function removeRow(button) {
             // Remove row from HTML table
             var row = button.parentNode.parentNode;
+            var key = row.getAttribute('data-key');
             document.getElementById('data-table').removeChild(row);
+            delete markers[key]; // Remove marker from object
             // Update local storage
             storeData();
         }
