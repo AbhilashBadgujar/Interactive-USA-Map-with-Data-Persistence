@@ -32,9 +32,6 @@
     <button onclick="addOrUpdateMarker()">Add/Update Marker</button>
     <button onclick="downloadData()">Download Data</button>
     <input type="file" id="file-input" onchange="loadData()">
-    <select id="courseSelect" onchange="panToCourse()">
-        <option value="">Select a Course</option>
-    </select>
     <div id="map"></div>
     <table>
         <thead>
@@ -53,8 +50,8 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([38.8977, -77.0365], 5);
-        var markers = {};
+        var map = L.map('map').setView([38.8977, -77.0365], 5); // Center map over USA
+        var markers = {}; // Object to hold markers for easy reference
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -90,7 +87,7 @@
             if (!isInitializing) map.panTo(new L.LatLng(lat, lon));
 
             const key = `${lat}_${lon}`;
-            markers[key] = marker;
+            markers[key] = marker; // Store marker reference
 
             const select = document.getElementById('courseSelect');
             const option = document.createElement('option');
@@ -104,14 +101,6 @@
             document.getElementById('data-table').appendChild(row);
         }
 
-        function updateMarker(lat, lon, offsetX, offsetY, courseName) {
-            const key = `${lat}_${lon}`;
-            markers[key].setPopupContent(`<b>${courseName}</b><br>Offset X: ${offsetX}<br>Offset Y: ${offsetY}`);
-            const option = document.querySelector(`option[value="${key}"]`);
-            option.textContent = courseName;
-            map.panTo(new L.LatLng(lat, lon));
-        }
-
         function panToCourse() {
             const key = document.getElementById('courseSelect').value;
             if (key && markers[key]) {
@@ -120,7 +109,56 @@
             }
         }
 
-        // Remaining functions (storeData, downloadData, loadData, removeRow) stay the same
+        function storeData() {
+            const rows = document.querySelectorAll('#data-table tr');
+            const data = Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td');
+                return {
+                    lat: parseFloat(cells[0].textContent),
+                    lon: parseFloat(cells[1].textContent),
+                    offsetX: parseFloat(cells[2].textContent),
+                    offsetY: parseFloat(cells[3].textContent),
+                    courseName: cells[4].textContent
+                };
+            });
+            localStorage.setItem('mapData', JSON.stringify(data));
+        }
+
+        function downloadData() {
+            const data = localStorage.getItem('mapData');
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'map-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadData() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                data.forEach(data => {
+                    console.log(data.courseName);
+                    addMarkerToMap(data.lat, data.lon, data.offsetX, data.offsetY, data.courseName, true);
+                });
+                localStorage.setItem('mapData', JSON.stringify(data));
+            };
+            reader.readAsText(file);
+        }
+
+        function removeRow(button) {
+            // Remove row from HTML table
+            var row = button.parentNode.parentNode;
+            var key = row.getAttribute('data-key');
+            document.getElementById('data-table').removeChild(row);
+            delete markers[key]; // Remove marker from object
+            // Update local storage
+            storeData();
+        }
     </script>
 </body>
 </html>
